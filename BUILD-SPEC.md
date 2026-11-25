@@ -99,3 +99,7 @@ App side: FormsService.swift is the provider boundary. The W-9 onboarding step o
 ## Correction 2026-11-24: forms provider changed from Abound to TaxBandits
 
 Abound was retired after a November 2024 acquisition. Its website, API hosts, and GitHub organization are gone, and stale directory pages were the source of the error. The provider is now TaxBandits (developer.taxbandits.com): free developer sandbox, W-9 collection by drop in UI or secure URL, instant TIN matching, a transaction API for payout recording, and 1099 NEC federal and state e filing from prepaid credits. FormsService.swift, migration 003, and the README were updated the same day. The provider boundary design meant only the provider name, comments, and defaults changed.
+
+## Addendum 2026-11-24: tracking, messaging, availability built
+
+Stage 4 pieces are in: LiveTrackingView (MapKit, simulated advancing specialist position, status ladder, message and call actions), MessagesView (thread with the supplied quick actions, reachable from tracking and from the pro jobs dashboard), and AvailabilityView (per day open and close times, days off, auto accept repeats, living in the pro Schedule tab). Migration 004 adds bookings, job_locations, and messages with party only row level security. Tax and payouts deliberately untouched this stage: TaxBandits stays as wired and payouts wait on the Branch program, which Vashon is meeting with directly.

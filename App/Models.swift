@@ -33,6 +33,38 @@ struct Specialist: Identifiable {
     var backgroundChecked: Bool
 }
 
+struct DayAvailability: Identifiable {
+    var id: Int { weekday }
+    let weekday: Int
+    let label: String
+    var isOpen: Bool
+    var start: Date
+    var end: Date
+
+    static func time(_ hour: Int) -> Date {
+        Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+    }
+
+    static var defaults: [DayAvailability] {
+        [
+            DayAvailability(weekday: 0, label: "Monday", isOpen: true, start: time(8), end: time(18)),
+            DayAvailability(weekday: 1, label: "Tuesday", isOpen: true, start: time(8), end: time(18)),
+            DayAvailability(weekday: 2, label: "Wednesday", isOpen: true, start: time(8), end: time(18)),
+            DayAvailability(weekday: 3, label: "Thursday", isOpen: true, start: time(8), end: time(18)),
+            DayAvailability(weekday: 4, label: "Friday", isOpen: true, start: time(8), end: time(18)),
+            DayAvailability(weekday: 5, label: "Saturday", isOpen: true, start: time(9), end: time(14)),
+            DayAvailability(weekday: 6, label: "Sunday", isOpen: false, start: time(9), end: time(14))
+        ]
+    }
+
+    var summary: String {
+        guard isOpen else { return "Closed" }
+        let f = DateFormatter()
+        f.dateFormat = "h a"
+        return "\(f.string(from: start)) to \(f.string(from: end))"
+    }
+}
+
 enum Pricing {
     static let bedroomCents = 2200
     static let bathroomCents = 2800

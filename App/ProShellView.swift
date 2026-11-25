@@ -42,6 +42,12 @@ struct JobsDashboardView: View {
                             .foregroundStyle(.secondary)
                         HStack {
                             Button("Navigate") {}.buttonStyle(.bordered)
+                            NavigationLink {
+                                MessagesView(contactName: "Sarah Jenkins")
+                            } label: {
+                                Text("Message")
+                            }
+                            .buttonStyle(.bordered)
                             Button("Start visit") {}.buttonStyle(.borderedProminent)
                         }
                     }
@@ -89,6 +95,8 @@ struct JobsDashboardView: View {
 }
 
 struct ProScheduleView: View {
+    @EnvironmentObject var store: AppStore
+
     var body: some View {
         NavigationStack {
             List {
@@ -97,8 +105,23 @@ struct ProScheduleView: View {
                     Text("Break and transit · 1.5 hrs").foregroundStyle(.secondary)
                     Text("2:00 PM to 4:00 PM · Standard Tidy · $136 · David Chen")
                 }
-                Section {
-                    Text("Adjust weekly availability")
+                Section("Weekly availability") {
+                    ForEach(store.availability) { day in
+                        HStack {
+                            Text(day.label)
+                            Spacer()
+                            Text(day.summary).foregroundStyle(.secondary)
+                        }
+                    }
+                    Text(store.autoAcceptRepeats
+                         ? "Auto accept repeat clients during open hours is on"
+                         : "Auto accept repeat clients is off")
+                        .foregroundStyle(.secondary)
+                    NavigationLink {
+                        AvailabilityView()
+                    } label: {
+                        Label("Edit weekly availability", systemImage: "calendar.badge.clock")
+                    }
                 }
             }
             .navigationTitle("Schedule")

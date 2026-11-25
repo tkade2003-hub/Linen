@@ -39,6 +39,13 @@ struct QuickBookView: View {
                         Text("Elena is on the way").bold()
                         Text("Signature Clean · 2.5 hrs · ETA 10:18 AM (12 min)")
                             .foregroundStyle(.secondary)
+                        NavigationLink {
+                            LiveTrackingView()
+                        } label: {
+                            Label("Track live", systemImage: "location")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding(.top, 2)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -139,11 +146,15 @@ struct BookingsView: View {
         NavigationStack {
             List {
                 Section("Upcoming") {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("En route · ETA 10:18 AM").bold()
-                        Text("Signature Clean · Today · 10:00 AM · 2.5 hrs · $148")
-                        Text("Elena Rostova · 742 Evergreen Terrace")
-                            .foregroundStyle(.secondary)
+                    NavigationLink {
+                        LiveTrackingView()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("En route · ETA 10:18 AM").bold()
+                            Text("Signature Clean · Today · 10:00 AM · 2.5 hrs · $148")
+                            Text("Elena Rostova · 742 Evergreen Terrace")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Recurring, every two weeks").bold()

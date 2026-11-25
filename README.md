@@ -35,6 +35,18 @@ The build is wired to the TaxBandits pattern. App/FormsService.swift is the prov
 
 Still needed to go live: a free TaxBandits developer account for sandbox credentials, then a live account before the first real filing. The API key is held server side and entered through the secure card flow when it exists. Until then the stub keeps the flow walkable.
 
+## Tracking, messaging, and availability
+
+App/TrackingView.swift is the homeowner live tracking screen: a MapKit map with the home marker, the specialist marker, and the route, a status ladder from confirmed to completed, and the specialist card with Message and Call. The specialist position advances on a timer so the screen walks end to end. It is reachable from the Track live button on the home screen next visit card and from the en route booking in the Bookings tab. In production the position comes from the job_locations stream over Supabase Realtime.
+
+App/MessagesView.swift is the thread screen, one thread per homeowner and specialist pair, with the quick actions from the supplied messaging screen (Share address, Running 10 min late, Please start with the kitchen). It opens from the tracking screen and from the Message button on the pro jobs dashboard.
+
+App/AvailabilityView.swift is weekly availability editing for specialists: open and close times per day, days off, and the auto accept repeat clients rule. It lives in the pro Schedule tab, and edits reflect in the schedule summary immediately because both read the same store state.
+
+Backend/tracking_messaging.sql is migration 004: the bookings table with the status ladder, job_locations for the tracking stream, and messages, all with row level security limited to the two parties on each booking or thread.
+
+Tax forms and payouts are intentionally untouched in this stage. TaxBandits stays as wired, and worker payouts wait on the Branch program.
+
 ## Next stages
 
 Stage 2 wires the homeowner booking flow to Supabase and Apple Pay. Stage 3 wires the pro flow. Stage 4 adds live tracking, messaging, and notifications. Stage 5 adds rating and tip, payouts, recurring bookings, and availability editing.

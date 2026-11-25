@@ -9,6 +9,8 @@ final class AppStore: ObservableObject {
     @Published var isOnline: Bool = true
     @Published var completedSteps: Set<OnboardingStep> = []
     @Published var tinLast4: String? = nil
+    @Published var availability: [DayAvailability] = DayAvailability.defaults
+    @Published var autoAcceptRepeats: Bool = true
 
     var onboardingComplete: Bool {
         completedSteps.count == OnboardingStep.allCases.count
