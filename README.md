@@ -47,6 +47,24 @@ Backend/tracking_messaging.sql is migration 004: the bookings table with the sta
 
 Tax forms and payouts are intentionally untouched in this stage. TaxBandits stays as wired, and worker payouts wait on the Branch program.
 
+## Live backend wiring (2026-11-24)
+
+The Linen backend now lives in Vashon's own Supabase account (project ref vftlwlnbfqqqxfdscato), transferred out of Rork the same day. Rork had already created the base tables there (profiles, homes, specialists, availability, services, add_ons, bookings, booking_declines) with row level security built on a user_id() helper and the catalogs seeded. Two migrations were applied to that live project and verified by reading the schema back:
+
+* Backend/realtime_tracking_messaging.sql is migration 005: job_locations and messages tables with policies limited to the two parties on a booking, both added to the supabase_realtime publication.
+* Backend/realtime_bookings.sql is migration 006: bookings added to the supabase_realtime publication so status changes stream.
+
+The app side is wired to those tables:
+
+* App/SupabaseConfig.swift holds the project URL and the public anon key. Row level security is the protection; the service role key never ships in the app.
+* App/SupabaseClient.swift is the REST client for locations and messages. Requests carry the session token from AppStore.authToken when the app is signed in.
+* App/RealtimeClient.swift is a small websocket client for the Realtime stream, one table and one booking at a time.
+* App/LocationPublisher.swift publishes the pro position from CoreLocation while a route is shared, throttled to a few seconds or 25 meters.
+* TrackingView follows the live position and the live booking status when the store carries a live booking, and falls back to the timer simulation in the demo flow. MessagesView loads, sends, and receives through the messages table in live mode. The pro jobs dashboard gained Start route and share location, and Start visit stops sharing.
+* App/LOCATION-PERMISSIONS.md lists the usage strings the app project must carry for the location prompt.
+
+What still connects this to a real clean: the app session setting authToken, currentUserId, and liveBookingId at sign in and when a booking is opened, which lands with the Rork session integration, and push notifications for messages that arrive while the app is closed. Until a session sets those values, the screens run the demo flow exactly as before.
+
 ## Next stages
 
-Stage 2 wires the homeowner booking flow to Supabase and Apple Pay. Stage 3 wires the pro flow. Stage 4 adds live tracking, messaging, and notifications. Stage 5 adds rating and tip, payouts, recurring bookings, and availability editing.
+Stage 2 wires the homeowner booking flow to Supabase and Apple Pay. Stage 3 wires the pro flow and the session hookup above. Stage 4 finishes notifications. Stage 5 adds rating and tip, payouts, and recurring bookings.

@@ -48,7 +48,27 @@ struct JobsDashboardView: View {
                                 Text("Message")
                             }
                             .buttonStyle(.bordered)
-                            Button("Start visit") {}.buttonStyle(.borderedProminent)
+                            Button("Start visit") { store.locationPublisher.stop() }
+                                .buttonStyle(.borderedProminent)
+                        }
+                        if store.isLive, let bookingId = store.liveBookingId {
+                            if store.locationPublisher.isSharing {
+                                HStack {
+                                    Label("Sharing location live", systemImage: "location.fill")
+                                        .foregroundStyle(.green)
+                                    Spacer()
+                                    Button("Stop") { store.locationPublisher.stop() }
+                                }
+                            } else {
+                                Button("Start route and share location") {
+                                    store.locationPublisher.start(
+                                        bookingId: bookingId,
+                                        specialistId: store.liveSpecialistId ?? store.currentUserId ?? "",
+                                        client: store.backend
+                                    )
+                                }
+                                .buttonStyle(.bordered)
+                            }
                         }
                     }
                     .padding()

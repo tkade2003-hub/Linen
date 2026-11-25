@@ -2,10 +2,42 @@ import SwiftUI
 import MapKit
 
 // Live tracking for an en route booking.
-// The specialist coordinate advances along the route on a timer so the
-// screen can be walked end to end. In production the coordinate comes from
-// the job_locations stream in migration 004 over Supabase Realtime, written
-// by the pro app every few seconds while the booking is en route.
+// When the store carries a live booking, the specialist coordinate comes
+// from the job_locations table (migration 005) over Supabase Realtime,
+// written by the pro app every few seconds while the booking is en
+// route, and the status ladder follows the bookings stream (migration
+// 006). In the demo flow the coordinate advances along the route on a
+// timer so the screen can be walked end to end.
+
+final class LiveLocationModel: ObservableObject {
+    @Published var coordinate: CLLocationCoordinate2D? = nil
+    @Published var lastUpdate: Date? = nil
+    private var realtime: RealtimeClient?
+
+    func start(bookingId: UUID, client: SupabaseClient, token: String?) {
+        Task {
+            if let row = try? await client.latestLocation(bookingId: bookingId) {
+                await MainActor.run { self.apply(row) }
+            }
+        }
+        let rt = RealtimeClient(table: "job_locations", bookingId: bookingId, token: token)
+        rt.onRecord = { [weak self] record in
+            if let row = decodeRow(record, as: JobLocationRow.self) { self?.apply(row) }
+        }
+        rt.connect()
+        realtime = rt
+    }
+
+    func apply(_ row: JobLocationRow) {
+        coordinate = CLLocationCoordinate2D(latitude: row.latitude, longitude: row.longitude)
+        lastUpdate = Date()
+    }
+
+    func stop() {
+        realtime?.disconnect()
+        realtime = nil
+    }
+}
 
 final class LocationSimulator: ObservableObject {
     let home = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
@@ -39,20 +71,65 @@ final class LocationSimulator: ObservableObject {
 }
 
 struct LiveTrackingView: View {
+    @EnvironmentObject var store: AppStore
     @StateObject private var sim = LocationSimulator()
+    @StateObject private var live = LiveLocationModel()
     @State private var camera: MapCameraPosition = .region(
         MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 37.7705, longitude: -122.4255),
                            span: MKCoordinateSpan(latitudeDelta: 0.025, longitudeDelta: 0.025))
     )
     private let timer = Timer.publish(every: 1.2, on: .main, in: .common).autoconnect()
 
+    private var elenaCoordinate: CLLocationCoordinate2D {
+        if store.isLive, let coordinate = live.coordinate { return coordinate }
+        return sim.coordinate
+    }
+
+    private var routeCoordinates: [CLLocationCoordinate2D] {
+        store.isLive ? [sim.home, elenaCoordinate] : sim.route
+    }
+
+    // Ladder rows are 0 Confirmed, 1 En route, 2 Arrived,
+    // 3 Clean in progress, 4 Completed. In live mode the row states
+    // come straight from the booking status the pro app sets.
+    private func ladderState(_ index: Int) -> StatusRow.State {
+        if store.isLive {
+            switch (store.liveBookingStatus ?? "").lowercased().replacingOccurrences(of: " ", with: "_") {
+            case "searching":
+                return index == 0 ? .active : .upcoming
+            case "confirmed":
+                if index == 0 { return .done }
+                return index == 1 ? .active : .upcoming
+            case "en_route":
+                if index == 0 { return .done }
+                return index == 1 ? .active : .upcoming
+            case "arrived":
+                if index < 2 { return .done }
+                return index == 2 ? .active : .upcoming
+            case "in_progress":
+                if index < 3 { return .done }
+                return index == 3 ? .active : .upcoming
+            case "completed":
+                return .done
+            default:
+                return index == 0 ? .done : .upcoming
+            }
+        }
+        switch index {
+        case 0: return .done
+        case 1: return sim.arrived ? .done : .active
+        case 2: return sim.arrived ? .active : .upcoming
+        default: return .upcoming
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Map(position: $camera) {
                     Marker("Your home", coordinate: sim.home)
-                    Marker("Elena", coordinate: sim.coordinate)
-                    MapPolyline(coordinates: sim.route)
+                    Marker("Elena", coordinate: elenaCoordinate)
+                    MapPolyline(coordinates: routeCoordinates)
                         .stroke(.blue, lineWidth: 3)
                 }
                 .frame(height: 300)
@@ -61,18 +138,23 @@ struct LiveTrackingView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(sim.arrived ? "Elena has arrived" : "Elena is on the way")
                         .font(.title3.bold())
-                    Text("Signature Clean · 2.5 hrs · ETA \(sim.etaMinutes) min")
-                        .foregroundStyle(.secondary)
+                    if store.isLive {
+                        Text("Signature Clean · 2.5 hrs · Live location")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Signature Clean · 2.5 hrs · ETA \(sim.etaMinutes) min")
+                            .foregroundStyle(.secondary)
+                    }
                     Text("742 Evergreen Terrace, Apt 4B")
                         .foregroundStyle(.secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    StatusRow(label: "Confirmed", state: .done)
-                    StatusRow(label: "En route", state: sim.arrived ? .done : .active)
-                    StatusRow(label: "Arrived", state: sim.arrived ? .active : .upcoming)
-                    StatusRow(label: "Clean in progress", state: .upcoming)
-                    StatusRow(label: "Completed", state: .upcoming)
+                    StatusRow(label: "Confirmed", state: ladderState(0))
+                    StatusRow(label: "En route", state: ladderState(1))
+                    StatusRow(label: "Arrived", state: ladderState(2))
+                    StatusRow(label: "Clean in progress", state: ladderState(3))
+                    StatusRow(label: "Completed", state: ladderState(4))
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -111,7 +193,13 @@ struct LiveTrackingView: View {
             .padding()
         }
         .navigationTitle("Live tracking")
-        .onReceive(timer) { _ in sim.advance() }
+        .onReceive(timer) { _ in if !store.isLive { sim.advance() } }
+        .task {
+            if store.isLive, let bookingId = store.liveBookingId {
+                live.start(bookingId: bookingId, client: store.backend, token: store.authToken)
+            }
+        }
+        .onDisappear { live.stop() }
     }
 }
 

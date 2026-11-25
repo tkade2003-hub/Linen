@@ -103,3 +103,9 @@ Abound was retired after a November 2024 acquisition. Its website, API hosts, an
 ## Addendum 2026-11-24: tracking, messaging, availability built
 
 Stage 4 pieces are in: LiveTrackingView (MapKit, simulated advancing specialist position, status ladder, message and call actions), MessagesView (thread with the supplied quick actions, reachable from tracking and from the pro jobs dashboard), and AvailabilityView (per day open and close times, days off, auto accept repeats, living in the pro Schedule tab). Migration 004 adds bookings, job_locations, and messages with party only row level security. Tax and payouts deliberately untouched this stage: TaxBandits stays as wired and payouts wait on the Branch program, which Vashon is meeting with directly.
+
+## Addendum 2026-11-24 night: live backend wiring
+
+The Linen backend was transferred from Rork into Vashon's own Supabase account (project ref vftlwlnbfqqqxfdscato). Rork had already created the base tables with row level security and seeded catalogs. Migration 005 added job_locations and messages with party only policies and put both on the Realtime stream; migration 006 added bookings to the stream. Both were applied to the live project and verified by reading the schema back.
+
+The app is wired to those tables: SupabaseConfig (project URL and public anon key), SupabaseClient (REST for locations and messages), RealtimeClient (websocket stream per booking), and LocationPublisher (CoreLocation publishing from the pro phone). TrackingView and MessagesView run live when the store carries a session token and a live booking id, and keep the demo flow otherwise. Remaining hookup: the app session setting authToken, currentUserId, and liveBookingId, plus push notifications for closed app messages. Location usage strings the project must carry are listed in App/LOCATION-PERMISSIONS.md.
