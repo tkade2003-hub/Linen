@@ -65,5 +65,21 @@ Deno.serve(async (req) => {
       .eq("status", "pending");
   }
 
+  if (event.type === "payment_intent.succeeded" || event.type === "payment_intent.payment_failed") {
+    const pi = event.data.object;
+    const status = event.type === "payment_intent.succeeded" ? "paid" : "failed";
+    const byIntent = await sb
+      .from("bookings")
+      .update({ payment_status: status })
+      .eq("stripe_payment_intent_id", pi.id)
+      .select("id");
+    if (!byIntent.data?.length && pi.metadata?.booking_id) {
+      await sb
+        .from("bookings")
+        .update({ payment_status: status, stripe_payment_intent_id: pi.id })
+        .eq("id", pi.metadata.booking_id);
+    }
+  }
+
   return json({ received: true });
 });
