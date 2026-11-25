@@ -211,7 +211,7 @@ private struct StatusRow: View {
     var body: some View {
         HStack {
             Image(systemName: state == .done ? "checkmark.circle.fill" : state == .active ? "circle.dotted" : "circle")
-                .foregroundStyle(state == .upcoming ? .secondary : .green)
+                .foregroundStyle(state == .upcoming ? .secondary : LinenTheme.mintDeep)
             Text(label)
                 .foregroundStyle(state == .upcoming ? .secondary : .primary)
                 .bold(state == .active)

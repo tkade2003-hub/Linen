@@ -65,6 +65,10 @@ The app side is wired to those tables:
 
 What still connects this to a real clean: the app session setting authToken, currentUserId, and liveBookingId at sign in and when a booking is opened, which lands with the Rork session integration, and push notifications for messages that arrive while the app is closed. Until a session sets those values, the screens run the demo flow exactly as before.
 
+## Brand color and pinned headers (2026-11-24)
+
+Mint green is the app accent, set in App/AppTheme.swift as LinenTheme (mint #3EB489, deep mint #2A7F62, soft tint #DFF5EA) and applied as the root tint in LinenApp, replacing the pink the build was using. The homeowner Home header and the pro Jobs header are pinned above their scroll views, so they stay at the top of the screen while content scrolls under them.
+
 ## Next stages
 
 Stage 2 wires the homeowner booking flow to Supabase and Apple Pay. Stage 3 wires the pro flow and the session hookup above. Stage 4 finishes notifications. Stage 5 adds rating and tip, payouts, and recurring bookings.

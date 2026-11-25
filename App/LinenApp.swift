@@ -8,6 +8,7 @@ struct LinenApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(store)
+                .tint(LinenTheme.mint)
         }
     }
 }

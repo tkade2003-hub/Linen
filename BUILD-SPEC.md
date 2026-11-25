@@ -109,3 +109,9 @@ Stage 4 pieces are in: LiveTrackingView (MapKit, simulated advancing specialist 
 The Linen backend was transferred from Rork into Vashon's own Supabase account (project ref vftlwlnbfqqqxfdscato). Rork had already created the base tables with row level security and seeded catalogs. Migration 005 added job_locations and messages with party only policies and put both on the Realtime stream; migration 006 added bookings to the stream. Both were applied to the live project and verified by reading the schema back.
 
 The app is wired to those tables: SupabaseConfig (project URL and public anon key), SupabaseClient (REST for locations and messages), RealtimeClient (websocket stream per booking), and LocationPublisher (CoreLocation publishing from the pro phone). TrackingView and MessagesView run live when the store carries a session token and a live booking id, and keep the demo flow otherwise. Remaining hookup: the app session setting authToken, currentUserId, and liveBookingId, plus push notifications for closed app messages. Location usage strings the project must carry are listed in App/LOCATION-PERMISSIONS.md.
+
+## Addendum 2026-11-24 night: brand color and pinned headers
+
+At Vashon direction the app accent is mint green, replacing the pink the build was using. App/AppTheme.swift defines LinenTheme (mint #3EB489, deep mint #2A7F62, soft tint #DFF5EA) and LinenApp sets mint as the root tint so buttons, links, toggles, and selection states inherit it. Messaging sender bubbles and the tracking status icons read the theme directly, and the Most booked chip uses the soft tint.
+
+Headers are pinned: on the homeowner Home tab the headline block stays fixed at the top while services and specialists scroll under it, and on the pro Jobs dashboard the Online switch and today projected pay stay fixed while jobs scroll. Both use a fixed header block above the ScrollView with a divider.

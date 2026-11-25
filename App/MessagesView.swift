@@ -73,7 +73,7 @@ struct MessagesView: View {
                             VStack(alignment: message.fromMe ? .trailing : .leading, spacing: 2) {
                                 Text(message.text)
                                     .padding(10)
-                                    .background(message.fromMe ? Color.accentColor : Color(.secondarySystemBackground))
+                                    .background(message.fromMe ? LinenTheme.mint : Color(.secondarySystemBackground))
                                     .foregroundStyle(message.fromMe ? .white : .primary)
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
                                 Text(message.timeLabel)

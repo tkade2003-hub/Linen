@@ -24,8 +24,10 @@ struct JobsDashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Pinned header: the online switch and today's pay stay
+                // at the top of the screen while jobs scroll under it.
+                VStack(alignment: .leading, spacing: 12) {
                     Toggle("Online", isOn: $store.isOnline)
                         .bold()
                     VStack(alignment: .leading, spacing: 4) {
@@ -33,6 +35,14 @@ struct JobsDashboardView: View {
                         Text("$266.00").font(.title.bold())
                         Text("2 visits · 4.5 hrs booked").foregroundStyle(.secondary)
                     }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemBackground))
+                Divider()
+
+                ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Up next · 10:00 AM").font(.headline)
                         Text("En route · 0.8 mi away").bold()
@@ -103,6 +113,7 @@ struct JobsDashboardView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
                 .padding()
+                }
             }
             .navigationTitle("Linen Pro")
             .toolbar {

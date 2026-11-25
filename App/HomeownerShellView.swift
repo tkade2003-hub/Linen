@@ -27,13 +27,22 @@ struct QuickBookView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Pinned header: stays at the top of the screen while
+                // the rest of the home screen scrolls under it.
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Freshness, on your schedule.")
                         .font(.title2.bold())
                     Text("Vetted home specialists available as soon as today at 2:00 PM.")
                         .foregroundStyle(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemBackground))
+                Divider()
 
+                ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Next visit").font(.headline)
                         Text("Elena is on the way").bold()
@@ -58,7 +67,13 @@ struct QuickBookView: View {
                             HStack {
                                 Text(tier.name).bold()
                                 if let tag = tier.tag {
-                                    Text(tag).font(.caption.bold())
+                                    Text(tag)
+                                        .font(.caption.bold())
+                                        .foregroundStyle(LinenTheme.mintDeep)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(LinenTheme.mintSoft)
+                                        .clipShape(Capsule())
                                 }
                                 Spacer()
                                 Text(Pricing.money(tier.priceCents)).bold()
@@ -89,6 +104,7 @@ struct QuickBookView: View {
                     }
                 }
                 .padding()
+                }
             }
             .navigationTitle("Linen")
             .toolbar {
