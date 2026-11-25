@@ -42,7 +42,7 @@ struct ContractorOnboardingView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Linen specialists are independent contractors. Finish these six steps once and your application goes to review. Your full tax ID is collected by the payment provider only. Linen keeps the last 4 digits.")
+                    Text("Linen specialists are independent contractors. Finish these six steps once and your application goes to review. Your W-9 is collected and verified by our tax forms partner, and your 1099 is filed through the same partner each January. Linen keeps only the status and the last 4 digits of your tax ID.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -94,10 +94,7 @@ struct StepFormView: View {
     @State private var businessName = ""
     @State private var classification = "individual"
     @State private var address = ""
-    @State private var tin = ""
-    @State private var signature = ""
     @State private var agree = false
-    @State private var exemptBackupWithholding = false
 
     var body: some View {
         NavigationStack {
@@ -121,24 +118,13 @@ struct StepFormView: View {
                         TextField("Mailing address for your 1099", text: $address)
                     }
                 case .w9:
-                    Section("Form W-9") {
-                        TextField("Name, as shown on your income tax return", text: $legalName)
-                        Picker("Federal tax classification", selection: $classification) {
-                            Text("Individual or sole proprietor").tag("individual")
-                            Text("LLC").tag("llc")
-                            Text("Corporation").tag("corporation")
-                            Text("Partnership").tag("partnership")
-                        }
-                        SecureField("Taxpayer Identification Number", text: $tin)
-                        Text("Your number goes to the payment provider over a secure connection. Linen stores only the last 4 digits.")
+                    Section("Form W-9, collected by our tax forms partner") {
+                        Text("The next screen is the official W-9, presented and held by our tax forms partner. They verify your name and tax ID with the IRS in real time, keep the signed form on file, and use it to file your 1099 NEC each January. Linen never sees your full tax ID.")
+                        Text("Use the legal name, classification, and address from the tax details step. They are sent ahead so the form opens partly filled.")
                             .font(.caption).foregroundStyle(.secondary)
-                        Toggle("I am exempt from backup withholding", isOn: $exemptBackupWithholding)
                     }
-                    Section("Certification and signature") {
-                        Text("Under penalties of perjury, I certify that the number shown is my correct Taxpayer Identification Number and I am not subject to backup withholding.")
-                            .font(.subheadline)
-                        TextField("Type your full legal name to sign", text: $signature)
-                        Toggle("I certify the above and sign this W-9", isOn: $agree)
+                    Section {
+                        Toggle("I completed and signed my W-9 with the forms partner", isOn: $agree)
                     }
                 case .agreement:
                     Section {
@@ -147,7 +133,7 @@ struct StepFormView: View {
                     Toggle("I have read and accept the agreement", isOn: $agree)
                 case .payout:
                     Section {
-                        Text("Payouts run through the contractor payment integration. It collects your bank details and your tax ID securely and issues your 1099 NEC each January. Linen never sees or stores your full account number or tax ID.")
+                        Text("Payouts run through the contractor payment integration, which collects your bank details securely. Your 1099 NEC is filed separately by our tax forms partner from your W-9 and your payout totals. Linen never sees or stores your full account number or tax ID.")
                     }
                     Toggle("I connected my payout account", isOn: $agree)
                 case .backgroundCheck:
@@ -158,9 +144,6 @@ struct StepFormView: View {
                 }
                 Section {
                     Button("Save and mark complete") {
-                        if step == .w9 {
-                            store.tinLast4 = String(tin.suffix(4))
-                        }
                         store.completeStep(step)
                         dismiss()
                     }

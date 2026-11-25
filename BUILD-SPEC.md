@@ -89,3 +89,9 @@ Backend: one Supabase project, mirroring the pattern already proven on the Tava 
 4. Live tracking, messaging, and notifications, which join the two sides.
 5. Rating and tip, earnings and payouts, schedule and availability, recurring bookings.
 6. Test on a real phone at every stage before calling any stage done.
+
+## Addendum 2026-11-24: tax forms integration
+
+Contractor tax forms run through an integration, not hand built forms. The provider is Abound, a tax compliance API for platforms: embedded white label W-9 collection, real time TIN verification, and 1099 NEC generation and filing, federal and state, with webhooks and a sandbox. FreshBooks was ruled out because it is bookkeeping software with no embeddable forms API for a third party app. Tax1099 remains the fallback: self serve and pay per form, but its API is gated behind its 349 dollar a year Scale plan and its W-9 flow is email based.
+
+App side: FormsService.swift is the provider boundary. The W-9 onboarding step opens the provider flow; Linen receives status, TIN match result, and last 4 digits only. Backend side: migration 003 adds W-9 and TIN status fields and a contractor_filings table. Filing rule: 1099 NEC at or over 600 dollars paid through 2025, and at or over 2,000 dollars for payments made in 2026 and later, filed each January. Going live needs an Abound account and API key, held server side.
