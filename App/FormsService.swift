@@ -2,10 +2,17 @@ import Foundation
 
 // Tax forms integration boundary.
 //
-// Provider: Abound, the tax compliance API built for platforms and
-// marketplaces. It provides the embedded white label W-9 component, real
-// time TIN verification, and 1099 NEC generation and filing with federal
-// and state authorities, with webhooks for status changes.
+// Provider: TaxBandits (developer.taxbandits.com), an IRS authorized
+// e-file provider with a developer API. It provides W-9 collection through
+// a drop in UI or secure URL, instant TIN matching against IRS records, a
+// transaction API that records contractor payouts through the year, and
+// 1099 NEC generation and filing with federal and state authorities, with
+// recipient copies delivered by secure portal or postal mail.
+//
+// History: this boundary was first wired to Abound on 2026-11-24. Abound
+// had been acquired in November 2024 and the service was retired, its
+// website and API hosts gone. The wiring was corrected to TaxBandits the
+// same day. The boundary shape did not change, which is the point of it.
 //
 // The app never collects or stores a full tax ID. The W-9 step opens the
 // provider component, the provider holds the form, and Linen receives only

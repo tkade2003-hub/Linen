@@ -1,12 +1,15 @@
 -- Linen tax forms integration, migration 003
--- Provider: Abound (tax compliance API for platforms).
--- Abound collects the W-9 through its embedded component, runs real time
--- TIN verification, and generates and files 1099 NEC forms federally and
--- with the states. Linen stores statuses and references only.
+-- Provider: TaxBandits (developer.taxbandits.com).
+-- TaxBandits collects the W-9 through its drop in UI or secure URL, runs
+-- instant TIN matching, records payouts through its transaction API, and
+-- generates and files 1099 NEC forms federally and with the states.
+-- Linen stores statuses and references only.
+-- First wired to Abound on 2026-11-24 and corrected the same day when
+-- Abound proved to be retired after a November 2024 acquisition.
 -- Run after contractor_onboarding.sql.
 
 alter table contractor_tax_profiles
-  add column if not exists forms_provider text not null default 'abound',
+  add column if not exists forms_provider text not null default 'taxbandits',
   add column if not exists provider_payee_id text,
   add column if not exists w9_status text not null default 'not_started'
     check (w9_status in ('not_started', 'invited', 'submitted', 'verified', 'failed')),
