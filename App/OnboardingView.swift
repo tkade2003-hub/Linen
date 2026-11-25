@@ -53,27 +53,54 @@ struct OnboardingView: View {
 
 struct ProGateView: View {
     @EnvironmentObject var store: AppStore
+    @State private var showOnboarding = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "checkmark.shield")
-                .font(.system(size: 44))
-            Text("Pro verification")
-                .font(.title2.bold())
-            Text(store.proStatus == .pending
-                 ? "Your application is in review. We check identity, background, and payout details before the Pro workspace opens."
-                 : "The Pro workspace opens after identity, background check, and payout setup are complete.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-            if store.proStatus == .none {
-                Button("Start pro application") { store.applyForPro() }
-                    .buttonStyle(.borderedProminent)
+        NavigationStack {
+            List {
+                Section {
+                    Label("Verified and Insured Pro", systemImage: "checkmark.shield")
+                        .font(.headline)
+                    Text(store.proStatus == .pending
+                         ? "Your application is in review. We check identity, background, and payout details before the Pro workspace opens."
+                         : "Finish contractor onboarding to open the Pro workspace. Specialists are 1099 independent contractors.")
+                        .foregroundStyle(.secondary)
+                }
+                Section("Contractor onboarding") {
+                    ForEach(OnboardingStep.allCases) { step in
+                        HStack {
+                            Image(systemName: store.completedSteps.contains(step) ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(store.completedSteps.contains(step) ? .green : .secondary)
+                            Text(step.title)
+                        }
+                    }
+                    if store.proStatus == .none {
+                        Button(store.completedSteps.isEmpty ? "Start contractor onboarding" : "Continue contractor onboarding") {
+                            showOnboarding = true
+                        }
+                    }
+                    if store.onboardingComplete && store.proStatus == .none {
+                        Button("Submit for review") { store.submitForReview() }
+                            .bold()
+                    }
+                    if let last4 = store.tinLast4 {
+                        Text("W-9 on file, tax ID ending \(last4)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if store.proStatus == .pending {
+                    Section("Stage demo") {
+                        Button("Simulate approval") { store.simulateApproval() }
+                    }
+                }
+                Section {
+                    Button("Use the homeowner side instead") { store.switchWorkspace(to: .homeowner) }
+                    Button("Sign out", role: .destructive) { store.signOut() }
+                }
             }
-            Button("Use the homeowner side instead") { store.switchWorkspace(to: .homeowner) }
-                .buttonStyle(.bordered)
-            Button("Sign out", role: .destructive) { store.signOut() }
+            .navigationTitle("Pro verification")
+            .sheet(isPresented: $showOnboarding) { ContractorOnboardingView() }
         }
-        .padding()
     }
 }

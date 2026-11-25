@@ -16,6 +16,12 @@ Built from the build spec at ~/workspace/linen-app/linen-build-spec.md.
 
 Sign in with any email. Choosing Specialist Pro lands in the Pro workspace as a verified pro so the shell can be walked end to end. Choosing Homeowner lands in the homeowner workspace, and the menu switcher can flip to Pro, which is where the gate belongs in production: pending pros see ProGateView instead. Sample names and figures come straight from the supplied screens.
 
+## Contractor onboarding (1099)
+
+Specialists are independent contractors. App/ContractorOnboarding.swift adds the six step flow behind the Pro gate: contractor status acknowledgment, legal and tax details, Form W-9 with typed signature certification, contractor agreement acceptance, payout setup, and background check consent. The Pro gate screen is now the onboarding checklist, and finishing all six steps enables Submit for review, which moves the pro to pending. The Simulate approval button on the pending screen is a stage demo affordance and must be removed before launch.
+
+Backend/contractor_onboarding.sql is migration 002: step state, the tax profile, and agreement records, all with row level security. Security rule: the full tax ID is collected by the contractor payment provider only. Linen stores the last 4 digits and the provider reference, never the full number, so a database copy can never leak one. Year end 1099 NEC forms are issued from the provider records joined on that reference.
+
 ## Next stages
 
 Stage 2 wires the homeowner booking flow to Supabase and Apple Pay. Stage 3 wires the pro flow. Stage 4 adds live tracking, messaging, and notifications. Stage 5 adds rating and tip, payouts, recurring bookings, and availability editing.
