@@ -100,6 +100,11 @@ export async function ensurePayoutAccount(sb: any, profileId: string) {
       type: "express",
       country: "US",
       business_type: "individual",
+      business_profile: {
+        mcc: "7349",
+        product_description: "House cleaning services booked through the Linen app",
+        url: "https://tkade2003-hub.github.io/linen-landing/",
+      },
       capabilities: {
         card_payments: { requested: true },
         transfers: { requested: true },
@@ -119,6 +124,32 @@ export async function ensurePayoutAccount(sb: any, profileId: string) {
     row = upd.data;
   }
   return row;
+}
+
+/// Reapplies the individual business profile (cleaning industry, service
+/// description, site) and returns a Stripe hosted onboarding link. The
+/// profile update must not include business_type: Stripe rejects the whole
+/// update when it does. The hosted page lives on Stripe's own domain and
+/// returns to a plain done page, never an app scheme link.
+export async function createHostedOnboardingLink(accountId: string): Promise<string> {
+  await stripe(`/accounts/${accountId}`, "POST", {
+    business_profile: {
+      mcc: "7349",
+      product_description: "House cleaning services booked through the Linen app",
+      url: "https://tkade2003-hub.github.io/linen-landing/",
+    },
+  });
+  const done = "https://tkade2003-hub.github.io/linen-landing/payout-done.html";
+  const link = await stripe("/account_links", "POST", {
+    account: accountId,
+    refresh_url: done,
+    return_url: done,
+    type: "account_onboarding",
+  });
+  if (!link.ok || !link.data?.url) {
+    throw new Error(link.data?.error?.message ?? "Could not create the onboarding link");
+  }
+  return link.data.url;
 }
 
 /// Creates a single use Account Session for the embedded account
@@ -155,5 +186,12 @@ export async function syncAccountRow(sb: any, profileId: string, acct: any) {
     .select()
     .single();
   if (error) throw new Error(error.message);
+  // The public specialists list reads payout_ready off the specialists row
+  // itself, because payout rows are private to each pro. Keep it in step
+  // here, at the one place payout state is written.
+  await sb
+    .from("specialists")
+    .update({ payout_ready: patch.onboarding_status === "complete" && patch.payouts_enabled })
+    .eq("profile_id", profileId);
   return data;
 }
