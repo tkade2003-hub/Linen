@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
   const { data: booking } = await sb
     .from("bookings")
-    .select("id, specialist_id, status, pro_pay_cents, tip_cents")
+    .select("id, specialist_id, status, pro_pay_cents, tip_cents, tip_paid_at")
     .eq("id", bookingId)
     .maybeSingle();
   if (!booking) return json({ error: "booking_not_found" }, 404);
@@ -38,7 +38,11 @@ Deno.serve(async (req) => {
   if (!payout?.stripe_account_id) return json({ error: "payout_account_missing" }, 409);
   if (!payout.payouts_enabled) return json({ error: "payouts_not_enabled" }, 409);
 
-  const amount = (booking.pro_pay_cents ?? 0) + (booking.tip_cents ?? 0);
+  // A tip is paid out only once its own payment has been collected from
+  // the homeowner (tip_paid_at set by the webhook). A recorded but unpaid
+  // tip never leaves the platform balance.
+  const collectedTip = booking.tip_paid_at ? (booking.tip_cents ?? 0) : 0;
+  const amount = (booking.pro_pay_cents ?? 0) + collectedTip;
   if (amount <= 0) return json({ error: "nothing_to_pay" }, 400);
 
   const sent = await stripe("/transfers", "POST", {
@@ -54,7 +58,7 @@ Deno.serve(async (req) => {
       booking_id: bookingId,
       profile_id: profileId,
       amount_cents: booking.pro_pay_cents ?? 0,
-      tip_cents: booking.tip_cents ?? 0,
+      tip_cents: collectedTip,
       status: "failed",
       failure_code: code,
     });
@@ -67,7 +71,7 @@ Deno.serve(async (req) => {
       profile_id: profileId,
       stripe_transfer_id: sent.data.id,
       amount_cents: booking.pro_pay_cents ?? 0,
-      tip_cents: booking.tip_cents ?? 0,
+      tip_cents: collectedTip,
       status: "paid",
     })
     .select()

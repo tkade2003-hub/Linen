@@ -65,7 +65,15 @@ Deno.serve(async (req) => {
       .eq("status", "pending");
   }
 
-  if (event.type === "payment_intent.succeeded" || event.type === "payment_intent.payment_failed") {
+  if (event.type === "payment_intent.succeeded" && event.data.object.metadata?.kind === "tip") {
+    const pi = event.data.object;
+    await sb
+      .from("bookings")
+      .update({ tip_paid_at: new Date().toISOString() })
+      .eq("tip_payment_intent_id", pi.id);
+  }
+
+  if ((event.type === "payment_intent.succeeded" || event.type === "payment_intent.payment_failed") && event.data.object.metadata?.kind !== "tip") {
     const pi = event.data.object;
     const status = event.type === "payment_intent.succeeded" ? "paid" : "failed";
     const byIntent = await sb
