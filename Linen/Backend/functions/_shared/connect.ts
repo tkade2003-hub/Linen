@@ -76,6 +76,69 @@ export function statusForAccount(acct: any): string {
   return "in_progress";
 }
 
+/// Returns the cleaner's payout row, creating the row and the Stripe
+/// Express connected account on first use. This is the Connect signup: the
+/// account exists from here, and Stripe's onboarding component collects the
+/// identity, tax, and bank details against it.
+export async function ensurePayoutAccount(sb: any, profileId: string) {
+  let { data: row } = await sb
+    .from("specialist_payouts")
+    .select("*")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  if (!row) {
+    const ins = await sb
+      .from("specialist_payouts")
+      .insert({ profile_id: profileId })
+      .select()
+      .single();
+    if (ins.error) throw new Error(ins.error.message);
+    row = ins.data;
+  }
+  if (!row.stripe_account_id) {
+    const created = await stripe("/accounts", "POST", {
+      type: "express",
+      country: "US",
+      business_type: "individual",
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+      metadata: { profile_id: profileId },
+    });
+    if (!created.ok) {
+      throw new Error(created.data?.error?.message ?? "Stripe account creation failed");
+    }
+    const upd = await sb
+      .from("specialist_payouts")
+      .update({ stripe_account_id: created.data.id, onboarding_status: "in_progress", updated_at: new Date().toISOString() })
+      .eq("profile_id", profileId)
+      .select()
+      .single();
+    if (upd.error) throw new Error(upd.error.message);
+    row = upd.data;
+  }
+  return row;
+}
+
+/// Creates a single use Account Session for the embedded account
+/// onboarding component on a connected account.
+export async function createOnboardingSession(accountId: string) {
+  const session = await stripe("/account_sessions", "POST", {
+    account: accountId,
+    components: {
+      account_onboarding: {
+        enabled: true,
+        features: { external_account_collection: true },
+      },
+    },
+  });
+  if (!session.ok) {
+    throw new Error(session.data?.error?.message ?? "Could not create the account session");
+  }
+  return session.data.client_secret as string;
+}
+
 export async function syncAccountRow(sb: any, profileId: string, acct: any) {
   const patch = {
     stripe_account_id: acct.id,
