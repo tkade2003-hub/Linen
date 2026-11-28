@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
         .from("connect_handoffs")
         .update({
           page_token_hash: await sha256Hex(pageToken),
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
         })
         .eq("code", body.code)
         .select()
